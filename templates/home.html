@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Track a Device</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script>
+    function sendLocation() {
+      const device = document.getElementById("deviceName").value;
+      if (!device) return alert("Please enter your device name.");
+
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+          fetch("/location", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              device: device,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              timestamp: new Date().toISOString(),
+            }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              alert("Location shared for " + device);
+            });
+        });
+      } else {
+        alert("Geolocation not supported.");
+      }
+    }
+
+    async function getLocation() {
+      const target = document.getElementById("targetDevice").value;
+      if (!target) return alert("Please enter a device name to track.");
+
+      const res = await fetch("/get-location/" + target);
+      const data = await res.json();
+
+      const info = document.getElementById("location");
+      if (data.latitude) {
+        info.innerText = `Latitude: ${data.latitude}, Longitude: ${data.longitude}`;
+      } else {
+        info.innerText = data.error || "Unknown error";
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h2>Phone Tracker App</h2>
+
+    <div>
+      <input type="text" id="deviceName" placeholder="Your device name" />
+      <button onclick="sendLocation()">Share My Location</button>
+    </div>
+
+    <hr style="margin: 20px 0;" />
+
+    <div>
+      <input type="text" id="targetDevice" placeholder="Device to track" />
+      <button onclick="getLocation()">Get Location</button>
+    </div>
+
+    <p id="location">No location loaded</p>
+  </div>
+</body>
+</html>
